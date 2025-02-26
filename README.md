@@ -88,6 +88,62 @@ Run the test suite:
 ⌘ + U
 ```
 
+## Version Management
+
+### Version Numbering
+We follow Semantic Versioning (SemVer):
+- Format: `MAJOR.MINOR.PATCH` (e.g., 1.0.0)
+- MAJOR: Breaking changes
+- MINOR: New features, backward compatible
+- PATCH: Bug fixes, backward compatible
+
+### Release Process
+1. **Preparation**
+   ```bash
+   # Create release branch
+   git checkout -b release/v1.0.0
+   
+   # Update version numbers
+   # - In Xcode: Update the version and build numbers
+   # - Update CHANGELOG.md
+   ```
+
+2. **Testing**
+   - Run full test suite
+   - Perform beta testing through TestFlight
+   - Address feedback and bug fixes
+
+3. **App Store Submission**
+   - Archive build in Xcode
+   - Submit through App Store Connect
+   - Monitor review process
+
+4. **Release**
+   ```bash
+   # Merge release branch
+   git checkout main
+   git merge release/v1.0.0
+   
+   # Tag release
+   git tag -a v1.0.0 -m "Release version 1.0.0"
+   git push origin v1.0.0
+   ```
+
+### Working on Next Version
+1. Create feature branches from main
+   ```bash
+   git checkout -b feature/new-feature
+   ```
+
+2. Develop and test new features
+
+3. Merge feature branches through pull requests
+
+4. Create new release when ready
+   ```bash
+   git checkout -b release/v1.1.0
+   ```
+
 ## Contributing
 
 1. Fork the repository
