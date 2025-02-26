@@ -36,11 +36,7 @@ playground.xcworkspace
 # We recommend against adding the Pods directory to your .gitignore. However
 # you should judge for yourself, the pros and cons are mentioned at:
 # https://guides.cocoapods.org/using/using-cocoapods.html#should-i-check-the-pods-directory-into-source-control
-#
-# Pods/
-#
-# Add this line if you want to avoid checking in source code from the Xcode workspace
-# *.xcworkspace
+Pods/
 
 # Carthage
 #
@@ -78,4 +74,49 @@ iOSInjectionProject/
 .LSOverride
 
 # Thumbnails
-._* 
+._*
+
+# Sensitive Code and Configuration
+## API Keys and Secrets
+**/Config/APIKeys.swift
+**/Config/Secrets.swift
+**/Config/PrivateConfig.swift
+
+## Proprietary Business Logic
+**/Core/ProprietaryCalculations.swift
+**/Core/BusinessLogic.swift
+**/Core/SensitiveLogic.swift
+
+## Private Data Models
+**/Models/Private*.swift
+**/Models/Sensitive*.swift
+
+## Security
+**/Security/*.swift
+**/Encryption/*.swift
+**/Auth/Private*.swift
+
+## Private Documentation
+**/Documentation/Private*.md
+**/Documentation/Internal*.md
+
+## Test Data with Sensitive Information
+**/TestData/Private*.swift
+**/TestData/Sensitive*.swift
+
+## Build configurations containing sensitive data
+**/Config/Debug.xcconfig
+**/Config/Release.xcconfig
+**/Config/Staging.xcconfig
+
+## Environment Variables
+.env
+.env.*
+
+## Private Keys and Certificates
+*.p12
+*.cer
+*.certSigningRequest
+*.key
+private_key
+public_key 
