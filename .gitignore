@@ -82,6 +82,15 @@ iOSInjectionProject/
 **/Config/Secrets.swift
 **/Config/PrivateConfig.swift
 
+## Financial Calculations and Formulas
+**/Calculations/FinancialCalculations.swift
+**/Calculations/Private*.swift
+**/Calculations/Formula*.swift
+**/Core/Calculations/*.swift
+**/Models/CalculationEngine.swift
+**/ViewModels/*Calculation*.swift
+**/Utilities/Financial*.swift
+
 ## Proprietary Business Logic
 **/Core/ProprietaryCalculations.swift
 **/Core/BusinessLogic.swift
