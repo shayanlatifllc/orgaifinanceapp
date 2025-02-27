@@ -8,6 +8,7 @@ final class AddAccountViewModel: ObservableObject {
     @Published var accountType = Account.AccountType.personal
     @Published var accountCategory = Account.AccountCategory.checking
     @Published var initialBalance = ""
+    @Published var creditLimit = ""
     @Published var error: AppError?
     @Published var showingCashExistsAlert = false
     
@@ -35,6 +36,10 @@ final class AddAccountViewModel: ObservableObject {
     var canCreateAccount: Bool {
         // If account details should be shown, require name and balance
         if accountRequiresDetails {
+            // For credit cards, also require credit limit
+            if accountCategory == .creditCard {
+                return !accountName.isEmpty && !initialBalance.isEmpty && !creditLimit.isEmpty
+            }
             return !accountName.isEmpty && !initialBalance.isEmpty
         }
         
@@ -92,12 +97,30 @@ final class AddAccountViewModel: ObservableObject {
                 throw AppError.invalidAmount
             }
             
-            // Validate balance is positive
-            guard parsedBalance >= 0 else {
-                throw AppError.invalidAmount
+            // For credit cards, balance can be negative (amount owed)
+            if accountCategory != .creditCard {
+                // Validate balance is positive for non-credit card accounts
+                guard parsedBalance >= 0 else {
+                    throw AppError.invalidAmount
+                }
             }
             
             balance = parsedBalance
+        }
+        
+        // Convert and validate credit limit for credit cards
+        var limit: Decimal = 0
+        if accountCategory == .creditCard && !creditLimit.isEmpty {
+            guard let parsedLimit = Decimal(string: creditLimit.replacingOccurrences(of: "[$,]", with: "", options: .regularExpression)) else {
+                throw AppError.invalidAmount
+            }
+            
+            // Validate credit limit is positive
+            guard parsedLimit >= 0 else {
+                throw AppError.invalidAmount
+            }
+            
+            limit = parsedLimit
         }
         
         // Create new account
@@ -108,6 +131,11 @@ final class AddAccountViewModel: ObservableObject {
             category: accountCategory
         )
         
+        // Set credit limit for credit card accounts
+        if accountCategory == .creditCard {
+            account.creditLimit = limit
+        }
+        
         // Save to SwiftData
         modelContext.insert(account)
         try modelContext.save()
@@ -117,6 +145,36 @@ final class AddAccountViewModel: ObservableObject {
     }
     
     func validateInput() -> Bool {
+        // For credit cards, we need name, balance, and credit limit
+        if accountCategory == .creditCard {
+            guard !accountName.isEmpty else {
+                error = AppError.missingRequiredField("Account Name")
+                return false
+            }
+            
+            guard !initialBalance.isEmpty else {
+                error = AppError.missingRequiredField("Balance")
+                return false
+            }
+            
+            guard Decimal(string: initialBalance.replacingOccurrences(of: "[$,]", with: "", options: .regularExpression)) != nil else {
+                error = AppError.invalidAmount
+                return false
+            }
+            
+            guard !creditLimit.isEmpty else {
+                error = AppError.missingRequiredField("Credit Limit")
+                return false
+            }
+            
+            guard Decimal(string: creditLimit.replacingOccurrences(of: "[$,]", with: "", options: .regularExpression)) != nil else {
+                error = AppError.invalidAmount
+                return false
+            }
+            
+            return true
+        }
+        
         // For asset categories, we need name and balance
         if accountCategory == .cashInHand || 
            accountCategory == .realEstate || 
@@ -129,7 +187,7 @@ final class AddAccountViewModel: ObservableObject {
             }
             
             guard !initialBalance.isEmpty else {
-                error = AppError.missingRequiredField("Initial Balance")
+                error = AppError.missingRequiredField("Balance")
                 return false
             }
             
@@ -141,10 +199,9 @@ final class AddAccountViewModel: ObservableObject {
             return true
         }
         
-        // For banking accounts
+        // For other banking accounts
         if accountCategory == .checking || 
-           accountCategory == .savings || 
-           accountCategory == .creditCard {
+           accountCategory == .savings {
             
             guard !accountName.isEmpty else {
                 error = AppError.missingRequiredField("Account Name")
@@ -152,7 +209,7 @@ final class AddAccountViewModel: ObservableObject {
             }
             
             guard !initialBalance.isEmpty else {
-                error = AppError.missingRequiredField("Initial Balance")
+                error = AppError.missingRequiredField("Balance")
                 return false
             }
             

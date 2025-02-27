@@ -385,30 +385,88 @@ struct AddAccountPage: View {
                     )
             }
             
-            // Amount Field
-            VStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {
+            // For Credit Cards, show Balance and Credit Limit fields inline
+            if selectedSubtype == .creditCards {
                 // Format the current date
                 let formattedDate = formatCurrentDate()
                 
-                Text("Amount (as of \(formattedDate))")
+                Text("Balance and Credit Limit (as of \(formattedDate))")
                     .font(DesignSystem.Typography.bodyFont(size: .subheadline))
                     .foregroundStyle(DesignSystem.Colors.secondary)
                 
-                TextField("$0.00", text: $viewModel.initialBalance)
-                    .font(DesignSystem.Typography.bodyFont(size: .body))
-                    .foregroundStyle(DesignSystem.Colors.primary)
-                    .keyboardType(.decimalPad)
-                    .padding(.vertical, DesignSystem.Spacing.medium)
-                    .padding(.horizontal, DesignSystem.Spacing.medium)
-                    .background(Color.clear)
-                    .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large, style: .continuous))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large, style: .continuous)
-                            .stroke(DesignSystem.Colors.primary.opacity(0.1), lineWidth: 1)
-                    )
-                    .onChange(of: viewModel.initialBalance) { oldValue, newValue in
-                        viewModel.initialBalance = viewModel.formatBalance(newValue)
+                HStack(spacing: DesignSystem.Spacing.medium) {
+                    // Balance Field
+                    VStack(alignment: .leading, spacing: DesignSystem.Spacing.small) {
+                        Text("Balance")
+                            .font(DesignSystem.Typography.bodyFont(size: .caption))
+                            .foregroundStyle(DesignSystem.Colors.secondary)
+                        
+                        TextField("$0.00", text: $viewModel.initialBalance)
+                            .font(DesignSystem.Typography.bodyFont(size: .body))
+                            .foregroundStyle(DesignSystem.Colors.primary)
+                            .keyboardType(.decimalPad)
+                            .padding(.vertical, DesignSystem.Spacing.medium)
+                            .padding(.horizontal, DesignSystem.Spacing.medium)
+                            .background(Color.clear)
+                            .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large, style: .continuous)
+                                    .stroke(DesignSystem.Colors.primary.opacity(0.1), lineWidth: 1)
+                            )
+                            .onChange(of: viewModel.initialBalance) { oldValue, newValue in
+                                viewModel.initialBalance = viewModel.formatBalance(newValue)
+                            }
                     }
+                    
+                    // Credit Limit Field
+                    VStack(alignment: .leading, spacing: DesignSystem.Spacing.small) {
+                        Text("Credit Limit")
+                            .font(DesignSystem.Typography.bodyFont(size: .caption))
+                            .foregroundStyle(DesignSystem.Colors.secondary)
+                        
+                        TextField("$0.00", text: $viewModel.creditLimit)
+                            .font(DesignSystem.Typography.bodyFont(size: .body))
+                            .foregroundStyle(DesignSystem.Colors.primary)
+                            .keyboardType(.decimalPad)
+                            .padding(.vertical, DesignSystem.Spacing.medium)
+                            .padding(.horizontal, DesignSystem.Spacing.medium)
+                            .background(Color.clear)
+                            .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large, style: .continuous)
+                                    .stroke(DesignSystem.Colors.primary.opacity(0.1), lineWidth: 1)
+                            )
+                            .onChange(of: viewModel.creditLimit) { oldValue, newValue in
+                                viewModel.creditLimit = viewModel.formatBalance(newValue)
+                            }
+                    }
+                }
+            } else {
+                // Amount Field (renamed to Balance for all other account types)
+                VStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {
+                    // Format the current date
+                    let formattedDate = formatCurrentDate()
+                    
+                    Text("Balance (as of \(formattedDate))")
+                        .font(DesignSystem.Typography.bodyFont(size: .subheadline))
+                        .foregroundStyle(DesignSystem.Colors.secondary)
+                    
+                    TextField("$0.00", text: $viewModel.initialBalance)
+                        .font(DesignSystem.Typography.bodyFont(size: .body))
+                        .foregroundStyle(DesignSystem.Colors.primary)
+                        .keyboardType(.decimalPad)
+                        .padding(.vertical, DesignSystem.Spacing.medium)
+                        .padding(.horizontal, DesignSystem.Spacing.medium)
+                        .background(Color.clear)
+                        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large, style: .continuous)
+                                .stroke(DesignSystem.Colors.primary.opacity(0.1), lineWidth: 1)
+                        )
+                        .onChange(of: viewModel.initialBalance) { oldValue, newValue in
+                            viewModel.initialBalance = viewModel.formatBalance(newValue)
+                        }
+                }
             }
         }
         .padding(.horizontal, DesignSystem.Layout.screenEdgePadding)

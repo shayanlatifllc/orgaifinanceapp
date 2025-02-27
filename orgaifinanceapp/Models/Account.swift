@@ -11,6 +11,7 @@ final class Account {
     var icon: String
     var createdAt: Date
     var updatedAt: Date
+    var creditLimit: Decimal = 0 // Added for credit cards
     
     init(
         id: UUID = UUID(),
@@ -20,7 +21,8 @@ final class Account {
         category: AccountCategory = .checking,
         icon: String? = nil,
         createdAt: Date = Date(),
-        updatedAt: Date = Date()
+        updatedAt: Date = Date(),
+        creditLimit: Decimal = 0
     ) {
         self.id = id
         self.name = name
@@ -30,6 +32,7 @@ final class Account {
         self.icon = icon ?? category.defaultIcon
         self.createdAt = createdAt
         self.updatedAt = updatedAt
+        self.creditLimit = creditLimit
     }
     
     enum AccountType: String, Codable, CaseIterable {
@@ -191,6 +194,19 @@ final class Account {
     var formattedBalance: String {
         let amount = effectiveCategory.isLiability ? -balance : balance
         return FinancialCalculations.Formatting.formatCurrency(amount)
+    }
+    
+    var formattedCreditLimit: String {
+        return FinancialCalculations.Formatting.formatCurrency(creditLimit)
+    }
+    
+    var availableCredit: Decimal {
+        guard effectiveCategory == .creditCard else { return 0 }
+        return creditLimit - abs(balance)
+    }
+    
+    var formattedAvailableCredit: String {
+        return FinancialCalculations.Formatting.formatCurrency(availableCredit)
     }
     
     static var preview: Account {
