@@ -335,22 +335,30 @@ struct AccountView: View {
                                 : DesignSystem.Colors.success
                             
                             HStack {
-                                VStack(alignment: .leading, spacing: DesignSystem.Spacing.xSmall) {
-                                    HStack(spacing: DesignSystem.Spacing.small) {
-                                        Image(systemName: account.icon)
-                                            .font(.system(size: 12))
-                                            .foregroundStyle(DesignSystem.Colors.secondary)
+                                HStack(spacing: DesignSystem.Spacing.small) {
+                                    Image(systemName: account.icon)
+                                        .font(.system(size: 12))
+                                        .foregroundStyle(DesignSystem.Colors.secondary)
+                                    
+                                    VStack(alignment: .leading, spacing: 0) {
                                         Text(account.name)
                                             .font(DesignSystem.Typography.bodyFont(size: .subheadline))
                                             .foregroundStyle(DesignSystem.Colors.primary)
-                                    }
-                                    
-                                    // Display remaining credit for credit card accounts
-                                    if account.effectiveCategory == .creditCard {
-                                        Text("Remaining Credit: \(account.formattedAvailableCredit)")
-                                            .font(DesignSystem.Typography.bodyFont(size: .caption))
-                                            .foregroundStyle(DesignSystem.Colors.secondary)
-                                            .padding(.leading, 24) // Align with the account name
+                                        
+                                        // Display remaining credit for credit card accounts
+                                        if account.effectiveCategory == .creditCard {
+                                            HStack(spacing: DesignSystem.Spacing.xxSmall) {
+                                                Text("Remaining:")
+                                                    .font(DesignSystem.Typography.bodyFont(size: .caption))
+                                                    .foregroundStyle(DesignSystem.Colors.secondary)
+                                                
+                                                // Use compact formatting for available credit
+                                                Text(AmountFormatter.formatCompactCurrency(account.availableCredit))
+                                                    .font(DesignSystem.Typography.bodyFont(size: .caption))
+                                                    .foregroundStyle(DesignSystem.Colors.secondary)
+                                                    .contentTransition(.numericText(value: Double(truncating: account.availableCredit as NSNumber)))
+                                            }
+                                        }
                                     }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
