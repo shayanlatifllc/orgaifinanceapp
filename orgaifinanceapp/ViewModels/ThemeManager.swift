@@ -26,16 +26,22 @@ class ThemeManager: ObservableObject {
     @AppStorage("isDarkMode") var isDarkMode: Bool = false
     @Published var tabOrder: [SettingsTab] = SettingsTab.allCases
     @AppStorage("isEditingTabs") var isEditingTabs: Bool = false
+    @Published var expandedTabs: Set<SettingsTab> = Set(SettingsTab.allCases)
     
     init() {
+        // Load tab order
         if let savedOrder = UserDefaults.standard.data(forKey: "settingsTabOrder") {
             if let decodedOrder = try? JSONDecoder().decode([SettingsTab].self, from: savedOrder) {
                 self.tabOrder = decodedOrder
-                return
             }
         }
-        // Default order if nothing is saved
-        self.tabOrder = SettingsTab.allCases
+        
+        // Load expanded tabs state
+        if let savedExpandedState = UserDefaults.standard.data(forKey: "expandedTabsState") {
+            if let decodedState = try? JSONDecoder().decode([SettingsTab].self, from: savedExpandedState) {
+                self.expandedTabs = Set(decodedState)
+            }
+        }
     }
     
     func saveTabOrder() {
@@ -47,6 +53,25 @@ class ThemeManager: ObservableObject {
     func resetTabOrder() {
         tabOrder = SettingsTab.allCases
         saveTabOrder()
+    }
+    
+    func toggleTabExpansion(_ tab: SettingsTab) {
+        if expandedTabs.contains(tab) {
+            expandedTabs.remove(tab)
+        } else {
+            expandedTabs.insert(tab)
+        }
+        saveExpandedState()
+    }
+    
+    func saveExpandedState() {
+        if let encoded = try? JSONEncoder().encode(Array(expandedTabs)) {
+            UserDefaults.standard.set(encoded, forKey: "expandedTabsState")
+        }
+    }
+    
+    func isTabExpanded(_ tab: SettingsTab) -> Bool {
+        return expandedTabs.contains(tab)
     }
     
     var currentColorScheme: ColorScheme? {

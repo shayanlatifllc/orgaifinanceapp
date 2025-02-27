@@ -58,19 +58,21 @@ private struct ProfileSection: View {
 
 // MARK: - Collapsible Section
 private struct CollapsibleSection<Content: View>: View {
+    @EnvironmentObject private var theme: ThemeManager
     let title: String
     let icon: String
     let content: Content
-    @State private var isExpanded: Bool = true
     let isEditing: Bool
     let onMove: (() -> Void)?
+    let tab: SettingsTab
     
-    init(title: String, icon: String, isEditing: Bool = false, onMove: (() -> Void)? = nil, @ViewBuilder content: () -> Content) {
+    init(title: String, icon: String, tab: SettingsTab, isEditing: Bool = false, onMove: (() -> Void)? = nil, @ViewBuilder content: () -> Content) {
         self.title = title
         self.icon = icon
         self.content = content()
         self.isEditing = isEditing
         self.onMove = onMove
+        self.tab = tab
     }
     
     var body: some View {
@@ -78,7 +80,7 @@ private struct CollapsibleSection<Content: View>: View {
             Button {
                 if !isEditing {
                     withAnimation(DesignSystem.Animation.default) {
-                        isExpanded.toggle()
+                        theme.toggleTabExpansion(tab)
                     }
                 }
             } label: {
@@ -100,7 +102,7 @@ private struct CollapsibleSection<Content: View>: View {
                     Spacer()
                     
                     if !isEditing {
-                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                        Image(systemName: theme.isTabExpanded(tab) ? "chevron.up" : "chevron.down")
                             .font(.caption.weight(.semibold))
                             .foregroundStyle(DesignSystem.Colors.primary)
                     }
@@ -111,7 +113,7 @@ private struct CollapsibleSection<Content: View>: View {
             }
             .buttonStyle(.plain)
             
-            if isExpanded && !isEditing {
+            if theme.isTabExpanded(tab) && !isEditing {
                 content
                     .padding(.leading, DesignSystem.Spacing.medium)
                     .transition(.opacity)
@@ -307,7 +309,7 @@ struct SettingsView: View {
     private func tabView(for tab: SettingsTab) -> some View {
         switch tab {
         case .display:
-            CollapsibleSection(title: tab.rawValue, icon: tab.icon, isEditing: theme.isEditingTabs) {
+            CollapsibleSection(title: tab.rawValue, icon: tab.icon, tab: tab, isEditing: theme.isEditingTabs) {
                 SettingsRow(icon: "circle.lefthalf.filled", title: "Appearance", showDivider: false) {
                     Picker("", selection: $theme.selectedTheme) {
                         ForEach(OFTheme.allCases, id: \.self) { theme in
@@ -320,7 +322,7 @@ struct SettingsView: View {
             }
             
         case .appSettings:
-            CollapsibleSection(title: tab.rawValue, icon: tab.icon, isEditing: theme.isEditingTabs) {
+            CollapsibleSection(title: tab.rawValue, icon: tab.icon, tab: tab, isEditing: theme.isEditingTabs) {
                 SettingsRow(icon: "arrow.clockwise", title: "Reset Onboarding", showDivider: false) {
                     Button {
                         showingResetConfirmation = true
@@ -333,7 +335,7 @@ struct SettingsView: View {
             }
             
         case .security:
-            CollapsibleSection(title: tab.rawValue, icon: tab.icon, isEditing: theme.isEditingTabs) {
+            CollapsibleSection(title: tab.rawValue, icon: tab.icon, tab: tab, isEditing: theme.isEditingTabs) {
                 VStack(spacing: 0) {
                     SettingsRow(icon: "lock", title: "App Lock") {
                         Toggle("", isOn: .constant(false))
@@ -348,7 +350,7 @@ struct SettingsView: View {
             }
             
         case .about:
-            CollapsibleSection(title: tab.rawValue, icon: tab.icon, isEditing: theme.isEditingTabs) {
+            CollapsibleSection(title: tab.rawValue, icon: tab.icon, tab: tab, isEditing: theme.isEditingTabs) {
                 VStack(spacing: 0) {
                     SettingsRow(icon: "number", title: "Version") {
                         Text("1.0.0")
@@ -365,7 +367,7 @@ struct SettingsView: View {
             }
             
         case .support:
-            CollapsibleSection(title: tab.rawValue, icon: tab.icon, isEditing: theme.isEditingTabs) {
+            CollapsibleSection(title: tab.rawValue, icon: tab.icon, tab: tab, isEditing: theme.isEditingTabs) {
                 VStack(spacing: 0) {
                     SettingsRow(icon: "book", title: "Help Center") {
                         Image(systemName: "chevron.right")
