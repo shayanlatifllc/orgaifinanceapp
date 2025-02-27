@@ -62,21 +62,33 @@ private struct CollapsibleSection<Content: View>: View {
     let icon: String
     let content: Content
     @State private var isExpanded: Bool = true
+    let isEditing: Bool
+    let onMove: (() -> Void)?
     
-    init(title: String, icon: String, @ViewBuilder content: () -> Content) {
+    init(title: String, icon: String, isEditing: Bool = false, onMove: (() -> Void)? = nil, @ViewBuilder content: () -> Content) {
         self.title = title
         self.icon = icon
         self.content = content()
+        self.isEditing = isEditing
+        self.onMove = onMove
     }
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             Button {
-                withAnimation(DesignSystem.Animation.default) {
-                    isExpanded.toggle()
+                if !isEditing {
+                    withAnimation(DesignSystem.Animation.default) {
+                        isExpanded.toggle()
+                    }
                 }
             } label: {
                 HStack {
+                    if isEditing {
+                        Image(systemName: "line.3.horizontal")
+                            .foregroundStyle(.secondary)
+                            .frame(width: 24)
+                    }
+                    
                     Image(systemName: icon)
                         .foregroundStyle(DesignSystem.Colors.primary)
                         .frame(width: 24)
@@ -87,19 +99,22 @@ private struct CollapsibleSection<Content: View>: View {
                     
                     Spacer()
                     
-                    Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
-                        .font(.caption.weight(.semibold))
-                        .foregroundStyle(DesignSystem.Colors.primary)
+                    if !isEditing {
+                        Image(systemName: isExpanded ? "chevron.up" : "chevron.down")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(DesignSystem.Colors.primary)
+                    }
                 }
                 .padding(.vertical, DesignSystem.Spacing.medium)
                 .padding(.horizontal, DesignSystem.Spacing.medium)
+                .background(isEditing ? DesignSystem.Colors.secondaryBackground.opacity(0.3) : Color.clear)
             }
             .buttonStyle(.plain)
             
-            if isExpanded {
+            if isExpanded && !isEditing {
                 content
                     .padding(.leading, DesignSystem.Spacing.medium)
-                    .transition(.move(edge: .top).combined(with: .opacity))
+                    .transition(.opacity)
             }
             
             Divider()
@@ -150,6 +165,78 @@ private struct SettingsRow<Content: View>: View {
     }
 }
 
+// MARK: - Edit Mode Button
+private struct EditModeButton: View {
+    @EnvironmentObject private var theme: ThemeManager
+    
+    var body: some View {
+        Button {
+            theme.toggleEditMode()
+        } label: {
+            HStack {
+                Spacer()
+                
+                Text(theme.isEditingTabs ? "Done" : "Edit")
+                    .font(DesignSystem.Typography.bodyFont(size: .body))
+                    .foregroundStyle(DesignSystem.Colors.primary)
+                
+                if !theme.isEditingTabs {
+                    Image(systemName: "pencil")
+                        .font(.system(size: 16))
+                        .foregroundStyle(DesignSystem.Colors.primary)
+                }
+                
+                Spacer()
+            }
+            .padding(.vertical, DesignSystem.Spacing.medium)
+            .background(Color.clear)
+            .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large, style: .continuous)
+                    .stroke(DesignSystem.Colors.primary.opacity(0.1), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, DesignSystem.Spacing.medium)
+        .padding(.vertical, DesignSystem.Spacing.small)
+    }
+}
+
+// MARK: - Reset Order Button
+private struct ResetOrderButton: View {
+    @EnvironmentObject private var theme: ThemeManager
+    
+    var body: some View {
+        Button {
+            theme.resetTabOrder()
+        } label: {
+            HStack {
+                Spacer()
+                
+                Text("Reset Order")
+                    .font(DesignSystem.Typography.bodyFont(size: .body))
+                    .foregroundStyle(DesignSystem.Colors.primary)
+                
+                Image(systemName: "arrow.counterclockwise")
+                    .font(.system(size: 16))
+                    .foregroundStyle(DesignSystem.Colors.primary)
+                
+                Spacer()
+            }
+            .padding(.vertical, DesignSystem.Spacing.medium)
+            .background(Color.clear)
+            .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large, style: .continuous)
+                    .stroke(DesignSystem.Colors.primary.opacity(0.1), lineWidth: 1)
+            )
+        }
+        .buttonStyle(.plain)
+        .padding(.horizontal, DesignSystem.Spacing.medium)
+        .padding(.vertical, DesignSystem.Spacing.small)
+    }
+}
+
 // MARK: - Main Settings View
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
@@ -159,6 +246,7 @@ struct SettingsView: View {
     @State private var showingResetConfirmation = false
     @State private var editingUsername = false
     @State private var error: AppError?
+    @State private var draggedItem: SettingsTab?
     
     var body: some View {
         NavigationStack {
@@ -167,80 +255,37 @@ struct SettingsView: View {
                     ProfileSection(username: $username, editingUsername: $editingUsername)
                         .padding(.top, DesignSystem.Spacing.medium)
                     
-                    // Display Section
-                    CollapsibleSection(title: "Display", icon: "paintbrush") {
-                        SettingsRow(icon: "circle.lefthalf.filled", title: "Appearance", showDivider: false) {
-                            Picker("", selection: $theme.selectedTheme) {
-                                ForEach(OFTheme.allCases, id: \.self) { theme in
-                                    Text(theme.rawValue.capitalized)
+                    // Tabs
+                    ForEach(theme.tabOrder) { tab in
+                        tabView(for: tab)
+                            .opacity(draggedItem == tab ? 0.5 : 1)
+                            .onDrag {
+                                if theme.isEditingTabs {
+                                    self.draggedItem = tab
+                                    return NSItemProvider(object: tab.id as NSString)
+                                } else {
+                                    return NSItemProvider()
                                 }
                             }
-                            .pickerStyle(.segmented)
-                            .frame(width: 180)
-                        }
+                            .onDrop(of: [.text], delegate: DropViewDelegate(
+                                item: tab,
+                                items: $theme.tabOrder,
+                                draggedItem: $draggedItem,
+                                onDropEnded: {
+                                    theme.saveTabOrder()
+                                }
+                            ))
                     }
                     
-                    // App Settings Section
-                    CollapsibleSection(title: "App Settings", icon: "gearshape") {
-                        SettingsRow(icon: "arrow.clockwise", title: "Reset Onboarding", showDivider: false) {
-                            Button {
-                                showingResetConfirmation = true
-                            } label: {
-                                Image(systemName: "chevron.right")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
+                    if theme.isEditingTabs {
+                        ResetOrderButton()
+                            .padding(.top, DesignSystem.Spacing.small)
                     }
                     
-                    // Security Section
-                    CollapsibleSection(title: "Security", icon: "lock.shield") {
-                        VStack(spacing: 0) {
-                            SettingsRow(icon: "lock", title: "App Lock") {
-                                Toggle("", isOn: .constant(false))
-                                    .tint(DesignSystem.Colors.primary)
-                            }
-                            
-                            SettingsRow(icon: "faceid", title: "Face ID", showDivider: false) {
-                                Toggle("", isOn: .constant(false))
-                                    .tint(DesignSystem.Colors.primary)
-                            }
-                        }
-                    }
+                    Spacer(minLength: DesignSystem.Spacing.large)
                     
-                    // About Section
-                    CollapsibleSection(title: "About", icon: "info.circle") {
-                        VStack(spacing: 0) {
-                            SettingsRow(icon: "number", title: "Version") {
-                                Text("1.0.0")
-                                    .font(DesignSystem.Typography.bodyFont(size: .body))
-                                    .foregroundStyle(.secondary)
-                            }
-                            
-                            SettingsRow(icon: "hammer", title: "Build", showDivider: false) {
-                                Text("1")
-                                    .font(DesignSystem.Typography.bodyFont(size: .body))
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
-                    
-                    // Support Section
-                    CollapsibleSection(title: "Support", icon: "questionmark.circle") {
-                        VStack(spacing: 0) {
-                            SettingsRow(icon: "book", title: "Help Center") {
-                                Image(systemName: "chevron.right")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                            }
-                            
-                            SettingsRow(icon: "envelope", title: "Contact Us", showDivider: false) {
-                                Image(systemName: "chevron.right")
-                                    .font(.caption.weight(.semibold))
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
+                    // Edit Mode Button
+                    EditModeButton()
                 }
                 .padding(.vertical, DesignSystem.Spacing.medium)
             }
@@ -255,6 +300,86 @@ struct SettingsView: View {
                 Text("This will delete all accounts and reset the app to its initial state. This action cannot be undone.")
             }
             .handleError($error)
+        }
+    }
+    
+    @ViewBuilder
+    private func tabView(for tab: SettingsTab) -> some View {
+        switch tab {
+        case .display:
+            CollapsibleSection(title: tab.rawValue, icon: tab.icon, isEditing: theme.isEditingTabs) {
+                SettingsRow(icon: "circle.lefthalf.filled", title: "Appearance", showDivider: false) {
+                    Picker("", selection: $theme.selectedTheme) {
+                        ForEach(OFTheme.allCases, id: \.self) { theme in
+                            Text(theme.rawValue.capitalized)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                    .frame(width: 180)
+                }
+            }
+            
+        case .appSettings:
+            CollapsibleSection(title: tab.rawValue, icon: tab.icon, isEditing: theme.isEditingTabs) {
+                SettingsRow(icon: "arrow.clockwise", title: "Reset Onboarding", showDivider: false) {
+                    Button {
+                        showingResetConfirmation = true
+                    } label: {
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            
+        case .security:
+            CollapsibleSection(title: tab.rawValue, icon: tab.icon, isEditing: theme.isEditingTabs) {
+                VStack(spacing: 0) {
+                    SettingsRow(icon: "lock", title: "App Lock") {
+                        Toggle("", isOn: .constant(false))
+                            .tint(DesignSystem.Colors.primary)
+                    }
+                    
+                    SettingsRow(icon: "faceid", title: "Face ID", showDivider: false) {
+                        Toggle("", isOn: .constant(false))
+                            .tint(DesignSystem.Colors.primary)
+                    }
+                }
+            }
+            
+        case .about:
+            CollapsibleSection(title: tab.rawValue, icon: tab.icon, isEditing: theme.isEditingTabs) {
+                VStack(spacing: 0) {
+                    SettingsRow(icon: "number", title: "Version") {
+                        Text("1.0.0")
+                            .font(DesignSystem.Typography.bodyFont(size: .body))
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    SettingsRow(icon: "hammer", title: "Build", showDivider: false) {
+                        Text("1")
+                            .font(DesignSystem.Typography.bodyFont(size: .body))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
+            
+        case .support:
+            CollapsibleSection(title: tab.rawValue, icon: tab.icon, isEditing: theme.isEditingTabs) {
+                VStack(spacing: 0) {
+                    SettingsRow(icon: "book", title: "Help Center") {
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                    
+                    SettingsRow(icon: "envelope", title: "Contact Us", showDivider: false) {
+                        Image(systemName: "chevron.right")
+                            .font(.caption.weight(.semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+            }
         }
     }
     
@@ -282,6 +407,37 @@ struct SettingsView: View {
         
         // Save changes
         try context.save()
+    }
+}
+
+// MARK: - Drop Delegate
+struct DropViewDelegate: DropDelegate {
+    let item: SettingsTab
+    @Binding var items: [SettingsTab]
+    @Binding var draggedItem: SettingsTab?
+    let onDropEnded: () -> Void
+    
+    func performDrop(info: DropInfo) -> Bool {
+        onDropEnded()
+        draggedItem = nil
+        return true
+    }
+    
+    func dropEntered(info: DropInfo) {
+        guard let draggedItem = self.draggedItem else { return }
+        
+        if draggedItem != item {
+            let from = items.firstIndex(of: draggedItem)!
+            let to = items.firstIndex(of: item)!
+            
+            withAnimation {
+                items.move(fromOffsets: IndexSet(integer: from), toOffset: to > from ? to + 1 : to)
+            }
+        }
+    }
+    
+    func dropUpdated(info: DropInfo) -> DropProposal? {
+        return DropProposal(operation: .move)
     }
 }
 
