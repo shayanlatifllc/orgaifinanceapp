@@ -8,9 +8,6 @@ struct AddAccountPage: View {
     @State private var selectedType: AccountType?
     @State private var selectedSubtype: AccountSubtype?
     @State private var selectedPrimaryUse: PrimaryUse?
-    @State private var showingTypePicker = false
-    @State private var showingSubtypePicker = false
-    @State private var showingPrimaryUsePicker = false
     
     init(modelContext: ModelContext) {
         self.modelContext = modelContext
@@ -157,15 +154,6 @@ struct AddAccountPage: View {
                 .disabled(!viewModel.canCreateAccount)
             }
         }
-        .sheet(isPresented: $showingTypePicker) {
-            typePickerSheetView
-        }
-        .sheet(isPresented: $showingSubtypePicker) {
-            subtypePickerSheetView
-        }
-        .sheet(isPresented: $showingPrimaryUsePicker) {
-            primaryUsePickerSheetView
-        }
         .handleError($viewModel.error)
     }
     
@@ -211,39 +199,37 @@ struct AddAccountPage: View {
                 .font(DesignSystem.Typography.bodyFont(size: .subheadline))
                 .foregroundStyle(DesignSystem.Colors.secondary)
             
-            Button {
-                showingTypePicker = true
-            } label: {
-                HStack {
-                    if let type = selectedType {
-                        Image(systemName: type.icon)
-                            .foregroundStyle(DesignSystem.Colors.primary)
-                            .transition(.opacity)
-                        
-                        Text(type.rawValue)
-                            .font(DesignSystem.Typography.bodyFont(size: .body))
-                            .foregroundStyle(DesignSystem.Colors.primary)
-                    } else {
-                        Text("Select Account Type")
-                            .font(DesignSystem.Typography.bodyFont(size: .body))
-                            .foregroundStyle(DesignSystem.Colors.secondary)
+            FlowLayout(spacing: DesignSystem.Spacing.small) {
+                ForEach(AccountType.allCases, id: \.self) { type in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            selectedType = type
+                            selectedSubtype = nil // Reset subtype when type changes
+                            selectedPrimaryUse = nil // Reset primary use when type changes
+                        }
+                    } label: {
+                        HStack(spacing: DesignSystem.Spacing.small) {
+                            Image(systemName: type.icon)
+                                .imageScale(.small)
+                                .foregroundStyle(selectedType == type ? 
+                                    DesignSystem.Colors.primary : DesignSystem.Colors.secondary)
+                            
+                            Text(type.rawValue)
+                                .font(DesignSystem.Typography.bodyFont(size: .subheadline))
+                                .foregroundStyle(selectedType == type ? 
+                                    DesignSystem.Colors.primary : DesignSystem.Colors.secondary)
+                        }
+                        .frame(height: 36)
+                        .padding(.horizontal, DesignSystem.Spacing.medium)
+                        .background(selectedType == type ? 
+                            DesignSystem.Colors.secondaryBackground : Color.clear)
+                        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium, style: .continuous)
+                                .stroke(DesignSystem.Colors.primary.opacity(0.1), lineWidth: 1)
+                        )
                     }
-                    
-                    Spacer()
-                    
-                    Image(systemName: "chevron.up.chevron.down")
-                        .foregroundStyle(DesignSystem.Colors.secondary.opacity(0.5))
-                        .imageScale(.small)
-                }
-                .padding(.vertical, DesignSystem.Spacing.medium)
-                .padding(.horizontal, DesignSystem.Spacing.medium)
-                .background {
-                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium, style: .continuous)
-                        .fill(DesignSystem.Colors.secondaryBackground)
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium, style: .continuous)
-                        .strokeBorder(DesignSystem.Colors.secondary.opacity(0.2), lineWidth: 1)
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -256,39 +242,67 @@ struct AddAccountPage: View {
                 .font(DesignSystem.Typography.bodyFont(size: .subheadline))
                 .foregroundStyle(DesignSystem.Colors.secondary)
             
-            Button {
-                showingSubtypePicker = true
-            } label: {
-                HStack {
-                    if let subtype = selectedSubtype {
-                        Image(systemName: subtype.icon)
+            if let type = selectedType {
+                if type == .investmentsRetirement {
+                    // Special handling for Investments & Retirement
+                    VStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {
+                        Text("Coming Soon")
+                            .font(DesignSystem.Typography.headlineFont(size: .title3))
                             .foregroundStyle(DesignSystem.Colors.primary)
-                            .transition(.opacity)
-                        
-                        Text(subtype.rawValue)
-                            .font(DesignSystem.Typography.bodyFont(size: .body))
-                            .foregroundStyle(DesignSystem.Colors.primary)
-                    } else {
-                        Text("Select Account Type")
-                            .font(DesignSystem.Typography.bodyFont(size: .body))
+                        Text("These features are coming in next updates. Stay tuned for enhanced investment tracking capabilities!")
+                            .font(DesignSystem.Typography.bodyFont(size: .subheadline))
                             .foregroundStyle(DesignSystem.Colors.secondary)
+                            .lineSpacing(4)
                     }
-                    
-                    Spacer()
-                    
-                    Image(systemName: "chevron.up.chevron.down")
-                        .foregroundStyle(DesignSystem.Colors.secondary.opacity(0.5))
-                        .imageScale(.small)
-                }
-                .padding(.vertical, DesignSystem.Spacing.medium)
-                .padding(.horizontal, DesignSystem.Spacing.medium)
-                .background {
-                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium, style: .continuous)
-                        .fill(DesignSystem.Colors.secondaryBackground)
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium, style: .continuous)
-                        .strokeBorder(DesignSystem.Colors.secondary.opacity(0.2), lineWidth: 1)
+                    .padding(DesignSystem.Spacing.large)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .background {
+                        RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large, style: .continuous)
+                            .fill(DesignSystem.Colors.secondaryBackground)
+                    }
+                    .overlay {
+                        RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large, style: .continuous)
+                            .strokeBorder(DesignSystem.Colors.secondary.opacity(0.1), lineWidth: 1)
+                    }
+                } else if !type.subtypes.isEmpty {
+                    FlowLayout(spacing: DesignSystem.Spacing.small) {
+                        ForEach(type.subtypes, id: \.rawValue) { subtype in
+                            Button {
+                                withAnimation(.easeInOut(duration: 0.3)) {
+                                    selectedSubtype = subtype
+                                    selectedPrimaryUse = nil // Reset primary use when subtype changes
+                                    updateViewModel()
+                                }
+                            } label: {
+                                HStack(spacing: DesignSystem.Spacing.small) {
+                                    Image(systemName: subtype.icon)
+                                        .imageScale(.small)
+                                        .foregroundStyle(selectedSubtype == subtype ? 
+                                            DesignSystem.Colors.primary : DesignSystem.Colors.secondary)
+                                    
+                                    Text(subtype.rawValue)
+                                        .font(DesignSystem.Typography.bodyFont(size: .subheadline))
+                                        .foregroundStyle(selectedSubtype == subtype ? 
+                                            DesignSystem.Colors.primary : DesignSystem.Colors.secondary)
+                                }
+                                .frame(height: 36)
+                                .padding(.horizontal, DesignSystem.Spacing.medium)
+                                .background(selectedSubtype == subtype ? 
+                                    DesignSystem.Colors.secondaryBackground : Color.clear)
+                                .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium, style: .continuous)
+                                        .stroke(DesignSystem.Colors.primary.opacity(0.1), lineWidth: 1)
+                                )
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                } else {
+                    Text("No subtypes available")
+                        .font(DesignSystem.Typography.bodyFont(size: .subheadline))
+                        .foregroundStyle(DesignSystem.Colors.secondary)
+                        .padding(.vertical, DesignSystem.Spacing.medium)
                 }
             }
         }
@@ -302,39 +316,36 @@ struct AddAccountPage: View {
                 .font(DesignSystem.Typography.bodyFont(size: .subheadline))
                 .foregroundStyle(DesignSystem.Colors.secondary)
             
-            Button {
-                showingPrimaryUsePicker = true
-            } label: {
-                HStack {
-                    if let primaryUse = selectedPrimaryUse {
-                        Image(systemName: primaryUse.icon)
-                            .foregroundStyle(DesignSystem.Colors.primary)
-                            .transition(.opacity)
-                        
-                        Text(primaryUse.rawValue)
-                            .font(DesignSystem.Typography.bodyFont(size: .body))
-                            .foregroundStyle(DesignSystem.Colors.primary)
-                    } else {
-                        Text("Select Primary Use")
-                            .font(DesignSystem.Typography.bodyFont(size: .body))
-                            .foregroundStyle(DesignSystem.Colors.secondary)
+            HStack(spacing: DesignSystem.Spacing.medium) {
+                ForEach(PrimaryUse.allCases, id: \.self) { primaryUse in
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.3)) {
+                            selectedPrimaryUse = primaryUse
+                            updateViewModel()
+                        }
+                    } label: {
+                        HStack(spacing: DesignSystem.Spacing.small) {
+                            Image(systemName: primaryUse.icon)
+                                .imageScale(.small)
+                                .foregroundStyle(selectedPrimaryUse == primaryUse ? 
+                                    DesignSystem.Colors.primary : DesignSystem.Colors.secondary)
+                            
+                            Text(primaryUse.rawValue)
+                                .font(DesignSystem.Typography.bodyFont(size: .subheadline))
+                                .foregroundStyle(selectedPrimaryUse == primaryUse ? 
+                                    DesignSystem.Colors.primary : DesignSystem.Colors.secondary)
+                        }
+                        .frame(maxWidth: .infinity)
+                        .frame(height: 36)
+                        .background(selectedPrimaryUse == primaryUse ? 
+                            DesignSystem.Colors.secondaryBackground : Color.clear)
+                        .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium, style: .continuous)
+                                .stroke(DesignSystem.Colors.primary.opacity(0.1), lineWidth: 1)
+                        )
                     }
-                    
-                    Spacer()
-                    
-                    Image(systemName: "chevron.up.chevron.down")
-                        .foregroundStyle(DesignSystem.Colors.secondary.opacity(0.5))
-                        .imageScale(.small)
-                }
-                .padding(.vertical, DesignSystem.Spacing.medium)
-                .padding(.horizontal, DesignSystem.Spacing.medium)
-                .background {
-                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium, style: .continuous)
-                        .fill(DesignSystem.Colors.secondaryBackground)
-                }
-                .overlay {
-                    RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium, style: .continuous)
-                        .strokeBorder(DesignSystem.Colors.secondary.opacity(0.2), lineWidth: 1)
+                    .buttonStyle(.plain)
                 }
             }
         }
@@ -363,16 +374,15 @@ struct AddAccountPage: View {
                 
                 TextField("Enter account name", text: $viewModel.accountName)
                     .font(DesignSystem.Typography.bodyFont(size: .body))
+                    .foregroundStyle(DesignSystem.Colors.primary)
                     .padding(.vertical, DesignSystem.Spacing.medium)
                     .padding(.horizontal, DesignSystem.Spacing.medium)
-                    .background {
-                        RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium, style: .continuous)
-                            .fill(DesignSystem.Colors.secondaryBackground)
-                    }
-                    .overlay {
-                        RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium, style: .continuous)
-                            .strokeBorder(DesignSystem.Colors.secondary.opacity(0.2), lineWidth: 1)
-                    }
+                    .background(Color.clear)
+                    .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large, style: .continuous)
+                            .stroke(DesignSystem.Colors.primary.opacity(0.1), lineWidth: 1)
+                    )
             }
             
             // Amount Field
@@ -386,17 +396,16 @@ struct AddAccountPage: View {
                 
                 TextField("$0.00", text: $viewModel.initialBalance)
                     .font(DesignSystem.Typography.bodyFont(size: .body))
+                    .foregroundStyle(DesignSystem.Colors.primary)
                     .keyboardType(.decimalPad)
                     .padding(.vertical, DesignSystem.Spacing.medium)
                     .padding(.horizontal, DesignSystem.Spacing.medium)
-                    .background {
-                        RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium, style: .continuous)
-                            .fill(DesignSystem.Colors.secondaryBackground)
-                    }
-                    .overlay {
-                        RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.medium, style: .continuous)
-                            .strokeBorder(DesignSystem.Colors.secondary.opacity(0.2), lineWidth: 1)
-                    }
+                    .background(Color.clear)
+                    .clipShape(RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large, style: .continuous))
+                    .overlay(
+                        RoundedRectangle(cornerRadius: DesignSystem.CornerRadius.large, style: .continuous)
+                            .stroke(DesignSystem.Colors.primary.opacity(0.1), lineWidth: 1)
+                    )
                     .onChange(of: viewModel.initialBalance) { oldValue, newValue in
                         viewModel.initialBalance = viewModel.formatBalance(newValue)
                     }
@@ -406,145 +415,14 @@ struct AddAccountPage: View {
         .transition(.opacity) // Use a simpler transition to avoid potential NaN issues
     }
     
+    // MARK: - Helper Methods
+    
     // Helper method to format the current date
     private func formatCurrentDate() -> String {
         let dateFormatter = DateFormatter()
         dateFormatter.dateStyle = .medium
         dateFormatter.timeStyle = .none
         return dateFormatter.string(from: Date())
-    }
-    
-    private var typePickerSheetView: some View {
-        NavigationStack {
-            List(AccountType.allCases, id: \.self) { type in
-                Button {
-                    withAnimation(.easeInOut(duration: 0.3)) {
-                        selectedType = type
-                        selectedSubtype = nil // Reset subtype when type changes
-                        selectedPrimaryUse = nil // Reset primary use when type changes
-                    }
-                    showingTypePicker = false
-                } label: {
-                    HStack {
-                        Image(systemName: type.icon)
-                            .foregroundStyle(DesignSystem.Colors.primary)
-                        Text(type.rawValue)
-                            .foregroundStyle(DesignSystem.Colors.primary)
-                        Spacer()
-                        if type == selectedType {
-                            Image(systemName: "checkmark")
-                                .foregroundStyle(DesignSystem.Colors.primary)
-                                .transition(.opacity)
-                        }
-                    }
-                }
-            }
-            .navigationTitle("Select Type")
-            .navigationBarTitleDisplayMode(.inline)
-            .safeAreaInset(edge: .top) {
-                HStack {
-                    Spacer()
-                    Button("Done") {
-                        showingTypePicker = false
-                    }
-                    .padding(.trailing)
-                }
-            }
-            .presentationDetents([.medium])
-            .presentationDragIndicator(.visible)
-        }
-    }
-    
-    private var subtypePickerSheetView: some View {
-        NavigationStack {
-            List {
-                if let type = selectedType {
-                    if type == .investmentsRetirement {
-                        VStack(alignment: .leading, spacing: DesignSystem.Spacing.medium) {
-                            Text("Coming Soon")
-                                .font(DesignSystem.Typography.headlineFont(size: .title3))
-                                .foregroundStyle(DesignSystem.Colors.primary)
-                            Text("These features are coming in next updates. Stay tuned for enhanced investment tracking capabilities!")
-                                .font(DesignSystem.Typography.bodyFont(size: .subheadline))
-                                .foregroundStyle(DesignSystem.Colors.secondary)
-                        }
-                        .padding(.vertical, DesignSystem.Spacing.medium)
-                    } else {
-                        ForEach(type.subtypes, id: \.rawValue) { subtype in
-                            Button {
-                                withAnimation(.easeInOut(duration: 0.3)) {
-                                    selectedSubtype = subtype
-                                    selectedPrimaryUse = nil // Reset primary use when subtype changes
-                                }
-                                showingSubtypePicker = false
-                            } label: {
-                                HStack {
-                                    Image(systemName: subtype.icon)
-                                        .foregroundStyle(DesignSystem.Colors.primary)
-                                    Text(subtype.rawValue)
-                                        .foregroundStyle(DesignSystem.Colors.primary)
-                                    Spacer()
-                                    if subtype == selectedSubtype {
-                                        Image(systemName: "checkmark")
-                                            .foregroundStyle(DesignSystem.Colors.primary)
-                                            .transition(.opacity)
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-            .navigationTitle("Select Type")
-            .navigationBarTitleDisplayMode(.inline)
-            .safeAreaInset(edge: .top) {
-                HStack {
-                    Spacer()
-                    Button("Done") {
-                        showingSubtypePicker = false
-                    }
-                    .padding(.trailing)
-                }
-            }
-            .presentationDetents([.medium])
-            .presentationDragIndicator(.visible)
-        }
-    }
-    
-    private var primaryUsePickerSheetView: some View {
-        NavigationStack {
-            List(PrimaryUse.allCases, id: \.self) { primaryUse in
-                Button {
-                    handlePrimaryUseSelection(primaryUse)
-                } label: {
-                    HStack {
-                        Image(systemName: primaryUse.icon)
-                            .foregroundStyle(DesignSystem.Colors.primary)
-                        Text(primaryUse.rawValue)
-                            .foregroundStyle(DesignSystem.Colors.primary)
-                        Spacer()
-                        if primaryUse == selectedPrimaryUse {
-                            Image(systemName: "checkmark")
-                                .foregroundStyle(DesignSystem.Colors.primary)
-                                .transition(.opacity)
-                        }
-                    }
-                }
-            }
-            .navigationTitle("Select Primary Use")
-            .navigationBarTitleDisplayMode(.inline)
-            .safeAreaInset(edge: .top) {
-                HStack {
-                    Spacer()
-                    Button("Done") {
-                        showingPrimaryUsePicker = false
-                    }
-                    .padding(.trailing)
-                }
-            }
-            .presentationDetents([.medium])
-            .presentationDragIndicator(.visible)
-        }
     }
     
     private func shouldShowAccountDetails(type: AccountType?, subtype: AccountSubtype?, primaryUse: PrimaryUse?) -> Bool {
@@ -607,15 +485,6 @@ struct AddAccountPage: View {
         }
     }
     
-    // Update on each selection change
-    private func handlePrimaryUseSelection(_ primaryUse: PrimaryUse) {
-        withAnimation(.easeInOut(duration: 0.3)) {
-            selectedPrimaryUse = primaryUse
-        }
-        updateViewModel()
-        showingPrimaryUsePicker = false
-    }
-    
     // Map the selected subtype to the actual account category
     private func mapSubtypeToCategory(_ subtype: AccountSubtype) -> Account.AccountCategory {
         switch subtype {
@@ -661,5 +530,62 @@ struct AddAccountPage: View {
         let container = try! ModelContainer(for: Account.self, configurations: config)
         
         AddAccountPage(modelContext: container.mainContext)
+    }
+}
+
+// MARK: - FlowLayout
+struct FlowLayout: Layout {
+    var spacing: CGFloat
+    
+    init(spacing: CGFloat = 8) {
+        self.spacing = spacing
+    }
+    
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let width = proposal.width ?? 0
+        var height: CGFloat = 0
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var maxHeight: CGFloat = 0
+        
+        for view in subviews {
+            let viewSize = view.sizeThatFits(.unspecified)
+            
+            if x + viewSize.width > width {
+                // Move to next row
+                y += maxHeight + spacing
+                x = 0
+                maxHeight = 0
+            }
+            
+            maxHeight = max(maxHeight, viewSize.height)
+            x += viewSize.width + spacing
+        }
+        
+        height = y + maxHeight
+        
+        return CGSize(width: width, height: height)
+    }
+    
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        var x = bounds.minX
+        var y = bounds.minY
+        var maxHeight: CGFloat = 0
+        
+        for view in subviews {
+            let viewSize = view.sizeThatFits(.unspecified)
+            
+            if x + viewSize.width > bounds.maxX {
+                // Move to next row
+                y += maxHeight + spacing
+                x = bounds.minX
+                maxHeight = 0
+            }
+            
+            view.place(at: CGPoint(x: x, y: y), proposal: ProposedViewSize(width: viewSize.width, height: viewSize.height))
+            
+            maxHeight = max(maxHeight, viewSize.height)
+            x += viewSize.width + spacing
+        }
     }
 } 
