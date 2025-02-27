@@ -182,12 +182,6 @@ private struct EditModeButton: View {
                     .font(DesignSystem.Typography.bodyFont(size: .body))
                     .foregroundStyle(DesignSystem.Colors.primary)
                 
-                if !theme.isEditingTabs {
-                    Image(systemName: "pencil")
-                        .font(.system(size: 16))
-                        .foregroundStyle(DesignSystem.Colors.primary)
-                }
-                
                 Spacer()
             }
             .padding(.vertical, DesignSystem.Spacing.medium)
@@ -217,10 +211,6 @@ private struct ResetOrderButton: View {
                 
                 Text("Reset Order")
                     .font(DesignSystem.Typography.bodyFont(size: .body))
-                    .foregroundStyle(DesignSystem.Colors.primary)
-                
-                Image(systemName: "arrow.counterclockwise")
-                    .font(.system(size: 16))
                     .foregroundStyle(DesignSystem.Colors.primary)
                 
                 Spacer()
