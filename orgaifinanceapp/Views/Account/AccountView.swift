@@ -335,13 +335,23 @@ struct AccountView: View {
                                 : DesignSystem.Colors.success
                             
                             HStack {
-                                HStack(spacing: DesignSystem.Spacing.small) {
-                                    Image(systemName: account.icon)
-                                        .font(.system(size: 12))
-                                        .foregroundStyle(DesignSystem.Colors.secondary)
-                                    Text(account.name)
-                                        .font(DesignSystem.Typography.bodyFont(size: .subheadline))
-                                        .foregroundStyle(DesignSystem.Colors.primary)
+                                VStack(alignment: .leading, spacing: DesignSystem.Spacing.xSmall) {
+                                    HStack(spacing: DesignSystem.Spacing.small) {
+                                        Image(systemName: account.icon)
+                                            .font(.system(size: 12))
+                                            .foregroundStyle(DesignSystem.Colors.secondary)
+                                        Text(account.name)
+                                            .font(DesignSystem.Typography.bodyFont(size: .subheadline))
+                                            .foregroundStyle(DesignSystem.Colors.primary)
+                                    }
+                                    
+                                    // Display remaining credit for credit card accounts
+                                    if account.effectiveCategory == .creditCard {
+                                        Text("Remaining Credit: \(account.formattedAvailableCredit)")
+                                            .font(DesignSystem.Typography.bodyFont(size: .caption))
+                                            .foregroundStyle(DesignSystem.Colors.secondary)
+                                            .padding(.leading, 24) // Align with the account name
+                                    }
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 
